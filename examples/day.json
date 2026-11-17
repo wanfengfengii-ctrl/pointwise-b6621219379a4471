@@ -1,0 +1,32 @@
+{
+  "studies": [
+    {
+      "study_id": "north",
+      "source_version": "initial",
+      "arms": [
+        {"treatment": "A", "mean": "1", "variance": "1/2"},
+        {"treatment": "B", "mean": "0", "variance": "3/2"}
+      ]
+    },
+    {
+      "study_id": "south",
+      "source_version": "initial",
+      "arms": [
+        {"treatment": "B", "mean": "0", "variance": "5"},
+        {"treatment": "A", "mean": "3", "variance": "3"}
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "study_id": "north",
+      "source_version": "correction",
+      "arms": [
+        {"treatment": "A", "mean": "9", "variance": "1/2"},
+        {"treatment": "B", "mean": "0", "variance": "3/2"}
+      ]
+    }
+  ],
+  "pair": ["A", "B"],
+  "request": ["A", "B"]
+}
