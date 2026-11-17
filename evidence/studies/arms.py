@@ -27,15 +27,13 @@ class ArmStatistics:
             raise ValueError("known mean variance must be positive")
 
 
-def normalize_arms(values):
+def _parse_arm_records(values):
     if isinstance(values, (str, bytes, Mapping)):
         raise ValueError("arms must be a sequence of arm records")
     try:
         items = tuple(values)
     except TypeError as exc:
         raise ValueError("invalid arms") from exc
-    if len(items) != 2:
-        raise ValueError("V1 requires exactly two arms")
     arms = []
     for item in items:
         if isinstance(item, ArmStatistics):
@@ -45,6 +43,25 @@ def normalize_arms(values):
         else:
             raise ValueError("invalid arm record")
         arms.append(arm)
-    if arms[0].treatment == arms[1].treatment:
+    return arms
+
+
+def _canonical_arms(arms):
+    treatments = [arm.treatment for arm in arms]
+    if len(set(treatments)) != len(treatments):
         raise ValueError("duplicate treatment")
     return tuple(sorted(arms, key=lambda arm: arm.treatment))
+
+
+def normalize_arms(values):
+    items = _parse_arm_records(values)
+    if len(items) != 2:
+        raise ValueError("V1 requires exactly two arms")
+    return _canonical_arms(items)
+
+
+def normalize_multiarm(values):
+    items = _parse_arm_records(values)
+    if not 2 <= len(items) <= 6:
+        raise ValueError("multi-arm studies require two to six arms")
+    return _canonical_arms(items)

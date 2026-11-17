@@ -4,6 +4,7 @@ from evidence.results.reader import ResultReader
 from evidence.archive.encoding import encode_fraction
 
 EXPORT_FORMAT_VERSION = 1
+NETWORK_FORMAT_VERSION = 2
 
 
 def _encode(value):
@@ -23,6 +24,12 @@ class ResultExporter:
     def export_result(self, result_id):
         result = self.reader.read_result(result_id)
         return json.dumps({"format_version": EXPORT_FORMAT_VERSION, "result": _encode(result)},
+                          sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    def export_network(self, result_id):
+        result = self.reader.read_network(result_id)
+        return json.dumps({"format_version": NETWORK_FORMAT_VERSION,
+                           "result": _encode(result)},
                           sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 

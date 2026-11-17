@@ -3,5 +3,7 @@
   "kind": "cli",
   "setup": [],
   "verify": ["python3.11", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"],
-  "demo": ["python3.11", "-B", "-m", "evidence.results.export", "examples/day.json"]
+  "demo": ["python3.11", "-B", "network_examples.py", "--demo"],
+  "verify_network": ["python3.11", "-B", "network_examples.py", "--verify"],
+  "demo_v1": ["python3.11", "-B", "-m", "evidence.results.export", "examples/day.json"]
 }

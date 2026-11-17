@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from evidence.studies.identity import StudyIdentity, ConflictError, validate_identity
 from evidence.studies.arms import ArmStatistics
-from evidence.studies.validation import validate_batch
+from evidence.studies.validation import validate_batch, validate_multiarm_study
 from evidence.archive.encoding import encode_fraction, decode_fraction
 from evidence.archive.repository import IntegrityError
 
@@ -26,8 +26,8 @@ def read_revision(repository, revision_id):
         if row["withdrawn"]:
             if arms:
                 raise ValueError("withdrawal has arms")
-        elif len(arms) != 2 or len({arm.treatment for arm in arms}) != 2:
-            raise ValueError("incomplete two-arm revision")
+        elif not 2 <= len(arms) <= 6 or len({arm.treatment for arm in arms}) != len(arms):
+            raise ValueError("invalid study revision arms")
         repository.load_study(row["study_id"])
         return StudyRevision(row["revision_id"], row["study_id"], row["source_version"],
                              bool(row["withdrawn"]), arms)
@@ -71,6 +71,11 @@ class StudyService:
         validated = validate_batch(entries)
         with self.repository.transactions.atomic():
             return tuple(self._accept(item.identity, item.arms) for item in validated)
+
+    def save_multiarm(self, id, source_version, arms):
+        validated = validate_multiarm_study(id, source_version, arms)
+        with self.repository.transactions.atomic():
+            return self._accept(validated.identity, validated.arms)
 
     def withdraw_study(self, id, source_version):
         identity = StudyIdentity(id, source_version)

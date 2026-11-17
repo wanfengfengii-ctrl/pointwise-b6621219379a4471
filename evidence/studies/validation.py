@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from collections.abc import Mapping
 from evidence.studies.identity import StudyIdentity, ConflictError
-from evidence.studies.arms import normalize_arms
+from evidence.studies.arms import normalize_arms, normalize_multiarm
 
 
 @dataclass(frozen=True)
@@ -12,6 +12,10 @@ class ValidatedStudy:
 
 def validate_study(study_id, source_version, arms):
     return ValidatedStudy(StudyIdentity(study_id, source_version), normalize_arms(arms))
+
+
+def validate_multiarm_study(study_id, source_version, arms):
+    return ValidatedStudy(StudyIdentity(study_id, source_version), normalize_multiarm(arms))
 
 
 def validate_batch(entries):

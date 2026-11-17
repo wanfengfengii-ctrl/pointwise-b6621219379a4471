@@ -123,6 +123,25 @@ class Repository:
             "SELECT * FROM cohort_members WHERE cohort_id=? ORDER BY position", (cohort_id,))]
         return result
 
+    def store_network(self, revision_ids):
+        self._writing()
+        cursor = self.connection.execute("INSERT INTO networks(member_count) VALUES (?)",
+                                         (len(revision_ids),))
+        network_id = cursor.lastrowid
+        self.connection.executemany("INSERT INTO network_members VALUES (?,?,?)",
+                                    [(network_id, i, rid) for i, rid in enumerate(revision_ids)])
+        return network_id
+
+    def load_network(self, network_id):
+        row = self.connection.execute(
+            "SELECT * FROM networks WHERE network_id=?", (_key(network_id),)).fetchone()
+        if row is None:
+            raise KeyError(network_id)
+        result = dict(row)
+        result["members"] = [dict(member) for member in self.connection.execute(
+            "SELECT * FROM network_members WHERE network_id=? ORDER BY position", (network_id,))]
+        return result
+
     def store_result(self, cohort_id, header, evidence, weights, contributions):
         self._writing()
         cursor = self.connection.execute("INSERT INTO results(cohort_id,payload) VALUES (?,?)",
@@ -158,4 +177,35 @@ class Repository:
                     raise IntegrityError("stored revision mismatch")
                 items.append(payload)
             result[name] = items
+        return result
+
+    def store_network_result(self, network_id, header, members):
+        self._writing()
+        cursor = self.connection.execute(
+            "INSERT INTO network_results(network_id,payload) VALUES (?,?)",
+            (network_id, _dump(header)))
+        result_id = cursor.lastrowid
+        for row in members:
+            self.connection.execute("INSERT INTO network_result_members VALUES (?,?,?,?)",
+                                    (result_id, row["position"], row["revision_id"], _dump(row)))
+        return result_id
+
+    def load_network_result(self, result_id):
+        row = self.connection.execute(
+            "SELECT * FROM network_results WHERE result_id=?", (_key(result_id),)).fetchone()
+        if row is None:
+            raise KeyError(result_id)
+        result = {"result_id": result_id, "network_id": row["network_id"],
+                  "header": _load(row["payload"])}
+        members = []
+        for stored in self.connection.execute(
+                "SELECT * FROM network_result_members WHERE result_id=? ORDER BY position",
+                (result_id,)):
+            payload = _load(stored["payload"])
+            if not isinstance(payload, dict) or payload.get("position") != stored["position"]:
+                raise IntegrityError("stored position mismatch")
+            if payload.get("revision_id") != stored["revision_id"]:
+                raise IntegrityError("stored revision mismatch")
+            members.append(payload)
+        result["members"] = members
         return result
